@@ -1,8 +1,8 @@
 # Projet "robotique" IA&Jeux 2021
 #
 # Binome:
-#  Prénom Nom: _________
-#  Prénom Nom: _________
+#  Prénom Nom: Christian Zhuang
+#  Prénom Nom: Kémo Sané
 
 def get_team_name():
     return "[ team with no name ]" # à compléter (comme vous voulez)
