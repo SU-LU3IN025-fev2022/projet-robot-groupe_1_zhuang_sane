@@ -1,69 +1,81 @@
 # Projet "robotique" IA&Jeux 2021
 #
 # Binome:
-#  Prénom Nom: ZHUANG Christian
-#  Prénom Nom: Sané Kemo
-
+#  Prénom Nom: Christian ZHUANG 
+#  Prénom Nom: Kemo  SANE 
+# ================================================================
 import numpy as np
+
+from pyroborobo import Pyroborobo
 
 def get_team_name():
     return "[ AaAaAaA ]"
 
 def step(robotId, sensors):
-    def get_extended_sensors(sensors):
-        for key in sensors:
-            sensors[key]["distance_to_robot"] = 1.0
-            sensors[key]["distance_to_wall"] = 1.0
-            if sensors[key]["isRobot"] == True:
-                sensors[key]["distance_to_robot"] = sensors[key]["distance"]
-            else:
-                sensors[key]["distance_to_wall"] = sensors[key]["distance"]
-        return sensors
-    sensors = get_extended_sensors(sensors)
+    # Senseurs
+    for key in sensors:
+        sensors[key]["distance_to_robot"] = 1.0
+        sensors[key]["distance_to_wall"] = 1.0
+        if sensors[key]["isRobot"] == True:
+            sensors[key]["distance_to_robot"] = sensors[key]["distance"]
+        else:
+            sensors[key]["distance_to_wall"] = sensors[key]["distance"]
 
     # Variables utilisé
+    left = sensors["sensor_front_left"]
+    right = sensors["sensor_front_right"]
+    front = sensors["sensor_front"]
     s_front_left = sensors["sensor_front_left"]["distance_to_wall"]
     s_front_right = sensors["sensor_front_right"]['distance_to_wall']
     s_back_right = sensors["sensor_back_right"]['distance_to_wall']
     s_back_left = sensors["sensor_back_left"]['distance_to_wall']
     s_left = sensors["sensor_left"]["distance_to_wall"]
     s_right = sensors["sensor_right"]["distance_to_wall"]
-    s_front = sensors["sensor_front"]["distance_to_wall"] 
-    left = sensors["sensor_front_left"]
-    right = sensors["sensor_front_right"]
+    s_front = front["distance_to_wall"] 
 
     # ===========  Comportements de braitenberg  ============================
     def hateAll():
-        translation = min(sensors["sensor_front"]["distance_to_wall"], sensors["sensor_front"]["distance_to_robot"])
+        translation = min(front["distance_to_wall"], front["distance_to_robot"])
         rotation = (-1) * (left["distance_to_wall"] +  left["distance_to_robot"]) + (1) *(right["distance_to_wall"] +  right["distance_to_robot"]) 
         return translation, rotation
     
     def hateBot():
-        translation = sensors["sensor_front"]["distance_to_robot"]
+        translation = front["distance_to_robot"]
         rotation = (-1) * left["distance_to_robot"] + 1 * right["distance_to_robot"]
         return translation, rotation
     
     def hateWall():
-        translation = sensors["sensor_front"]["distance_to_wall"]
+        translation = front["distance_to_wall"]
         rotation = (-1) * left["distance_to_wall"] + 1 * right["distance_to_wall"]
         return translation, rotation
     
     def loveBot():
-        translation = sensors["sensor_front"]["distance_to_robot"]
+        translation = front["distance_to_robot"]
         rotation = 1 * left["distance_to_robot"] + (-1) *right["distance_to_robot"]
         return translation, rotation
     
     def loveWall():
-        translation = sensors["sensor_front"]["distance_to_wall"]
+        translation = front["distance_to_wall"]
         rotation = 1 * left["distance_to_wall"] + (-1) *right["distance_to_wall"]
         return translation, rotation
 
     # ===========  Comportement Complexe ============================
+    # Comportement par defaut
+    def default():
+        translation = 1
+        rotation = 0
+        if sensors["sensor_front_right"]["distance"] < 1:
+            rotation = -0.5
+        elif sensors["sensor_front_left"]["distance"] < 1 or sensors["sensor_front"]["distance"] < 1:
+            rotation = 0.5
+        return translation, rotation
+    
+    # Evite les robots alliés
     def hateFriend():
-        if left["isSameTeam"] or right["isSameTeam"]:
-            if sensors["sensor_front"]["distance_to_robot"]<0.: return 1, 0.5
-            return hateAll()
-        return 1, 0
+        if sensors["sensor_left"]["distance_to_robot"]<1: return  1, 0.3
+        if sensors["sensor_right"]["distance_to_robot"]<1: return  1, -0.3
+        if front["distance_to_robot"]<0.5: return 1, 0.3
+        return hateAll()
     # Architecture de subsomption:
     # 1. aller vers les robots si detecte un robot,  sinon
     # 2. eviter les murs si detecte un mur, sinon
@@ -80,34 +92,74 @@ def step(robotId, sensors):
     # 2. effectue le comportement subsomption
     def stalker():
         if left["isSameTeam"] or right["isSameTeam"]: return hateFriend()
-        return subsomption.step(robotId, sensors)
+        return subsomption()
+    
     # Arbre de décision: longer les murs
     def enter():
-        if left["isSameTeam"] or right["isSameTeam"]: return hateFriend()
         d = 0.3
+
+        def alea(a, b, va, vb):
+            if np.random.random_sample() < 0.5:
+                if a: return 1, va
+                if b: return 1, vb
+            else: 
+                if b: return 1, vb
+                if a: return 1, va
+
         # Mur en face et sur un des cotes
-        if s_front<d and s_left<d: return 1, 1
-        if s_front<d and s_right<d: return 1, -1
+        if (s_front<d and s_left<d) or (s_front<d and s_right<d):
+            l = s_front<d and s_left<d
+            r = s_front<d and s_right<d
+            return alea(l, r, 1, -1)
+        d = 0.5
         # Mur sur un des cotes ou les deux
         if s_front_left<1 or s_front_right<1:
             if s_front_left - s_front_right < 0.1 : return 1, 1
-            if s_front_left<0.3 or s_front_right<0.3: return hateWall()
+            if s_front_left<d or s_front_right<d: return hateWall()
             return loveWall()
         d = 0.3
         # Mur derriere droite ou grauche
-        if np.random.random_sample() < 0.5:
-            if s_back_right<d or s_right<d: return 1, 0.3
-            if s_back_left<d or s_left<d: return 1, -0.3
-        else: 
-            if d<s_back_left<1 or d<s_left<1: return 1, -0.3
-            if d<s_back_right<1 or d<s_right<1: return 1, 0.3
+        if  s_back_right<1 or s_right<1 or s_back_left<1 or s_left<1:
+            if s_back_right<1 and s_back_left<1: return 1, 0 
+            l = s_back_left<1 or s_left<1
+            r = s_back_right<1 or s_right<1
+            return alea(l, r, -0.3, 0.3)
         # Mur en face
-        if s_front < 1: return 1, 0.3
+        if s_front < 1:
+             if np.random.random_sample() < 0.5: return 1, 0.3
+             else: return 1, -0.3
         return 1, 0
 
-    translation, rotation = enter()
+    rob = Pyroborobo.get()
+    iteration = rob.iterations
+    change =  iteration//250 % 2 == 0
+    
+    # Differents strategie selon le robotId
+    # stalker + ( enter / default)
+    def strat1():
+        if left["distance_to_robot"]<1 or right["distance_to_robot"]<1 or front["distance_to_robot"]<1: return subsomption()
+        if change: return enter()
+        else: return default()
+    # ( enter / default)
+    def strat2():
+        if change: return enter()
+        else: return default()
+    # stalker + default
+    def strat3():
+        if left["distance_to_robot"]<1 or right["distance_to_robot"]<1 or front["distance_to_robot"]<1: return subsomption()
+        return default()
+
+    def detect_back(s):
+        return s["isRobot"] and (not s["isSameTeam"]) and s["distance"]<1
+
+    if detect_back(sensors["sensor_back"]):
+        return 0,0
+    if left["isSameTeam"] or right["isSameTeam"] or sensors["sensor_left"]["isSameTeam"] or sensors["sensor_right"]["isSameTeam"] or front["isSameTeam"]: translation, rotation = hateFriend()
+    else:
+        if robotId<3: return strat1()
+        elif robotId<6: return strat2()
+        else: return strat3()
     # limite les valeurs de sortie entre -1 et +1
     translation = max(-1,min(translation,1))
     rotation = max(-1, min(rotation, 1))
     return translation, rotation
-
