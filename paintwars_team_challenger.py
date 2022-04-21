@@ -133,7 +133,6 @@ def step(robotId, sensors):
     rob = Pyroborobo.get()
     iteration = rob.iterations
     change =  iteration//250 % 2 == 0
-    
     # Differents strategie selon le robotId
     # stalker + ( enter / default)
     def strat1():
@@ -157,7 +156,7 @@ def step(robotId, sensors):
     if left["isSameTeam"] or right["isSameTeam"] or sensors["sensor_left"]["isSameTeam"] or sensors["sensor_right"]["isSameTeam"] or front["isSameTeam"]: translation, rotation = hateFriend()
     else:
         if robotId<3: return strat1()
-        elif robotId<6: return strat2()
+        elif robotId<5: return strat2()
         else: return strat3()
     # limite les valeurs de sortie entre -1 et +1
     translation = max(-1,min(translation,1))
