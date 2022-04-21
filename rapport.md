@@ -2,7 +2,7 @@
 - etudiant 1: Christian ZHUANG  
 - etudiant 2: Kemo Sané  
 
-## Comportements implémentés:
+## I - Comportements implémentés:
 ### **hateFriend**:  
     Eviter les robots de la même equipe,  
     Sinon avancer tout droit
@@ -15,14 +15,17 @@
     1. s'éloigner du mur si le robot est trop près
     2. se rapprocher du mur si le robot est trop éloigné
 
-## Strategie comportementale
-    3 strategies différentes selon le robotId:
-    - Suivre les adversaires (stalker), sinon longer (enter) ou eviter les murs
-    - Longer (enter) ou eviter les murs
-    - Suivre les adversaires (stalker), sinon eviter les murs
+## II - __Strategie comportementale__:
+    - S'arrête, si un adversaire est derrière le robot
+    - Eviter les robots de la même équipe
+    
+    Puis 3 comportements différents selon le robotId:
+    - Suivre les adversaires , sinon longer ou eviter les murs
+    - Longer ou eviter les murs
+    - Suivre les adversaires, sinon eviter les murs
 
  __Remarque__:  
-On choisit de longer ou d'éviter les murs, selon l'itération de la partie. On change de comportement tous les 250 itérations
+On choisit de longer ou d'éviter les murs, selon l'itération de la partie. On change de comportement tous les 250 itérations.
 
 
 
