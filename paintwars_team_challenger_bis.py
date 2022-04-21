@@ -111,23 +111,32 @@ def step(robotId, sensors):
             l = s_front<d and s_left<d
             r = s_front<d and s_right<d
             return alea(l, r, 1, -1)
-        d = 0.4
+        d = 0.5
+        # Couloir
+        if s_front_right<1 and s_right<1 and s_front_left<1 and s_left<1:
+            return 1, 0
+
         # Mur sur un des cotes ou les deux
         if s_front_left<1 or s_front_right<1:
-            if s_front_left - s_front_right < 0.1 : return 1, 1
+            if s_front_left - s_front_right < 0.01 : return 1, 1
             if s_front_left<d or s_front_right<d: return hateWall()
             return loveWall()
+        if s_left<1 or s_right<1:
+            if s_left<1 and s_right <1 : return 1, 0
+            l = s_left<1
+            r = s_right<1
+            return alea(l, r, -0.3, 0.3)
         d = 0.3
         # Mur derriere droite ou grauche
-        if  s_back_right<1 or s_right<1 or s_back_left<1 or s_left<1:
+        if  s_back_right<1 or s_back_left<1:
             if s_back_right<1 and s_back_left<1: return 1, 0 
-            l = s_back_left<1 or s_left<1
-            r = s_back_right<1 or s_right<1
+            l = s_back_left<1
+            r = s_back_right<1
             return alea(l, r, -0.3, 0.3)
         # Mur en face
         if s_front < 1:
-             if np.random.random_sample() < 0.5: return 1, 0.3
-             else: return 1, -0.3
+             if np.random.random_sample() < 0.5: return 1, 0.5
+             else: return 1, -0.5
         return 1, 0
 
     # Differents strategie selon le robotId
