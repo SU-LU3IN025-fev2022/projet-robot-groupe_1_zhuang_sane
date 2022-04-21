@@ -72,10 +72,12 @@ def step(robotId, sensors):
     
     # Evite les robots alliés
     def hateFriend():
-        if sensors["sensor_left"]["distance_to_robot"]<1: return  1, 0.3
-        if sensors["sensor_right"]["distance_to_robot"]<1: return  1, -0.3
-        if front["distance_to_robot"]<0.5: return 1, 0.3
-        return hateAll()
+        if left["isSameTeam"] or right["isSameTeam"] or sensors["sensor_left"]["isSameTeam"] or sensors["sensor_right"]["isSameTeam"] or front["isSameTeam"]:
+            if sensors["sensor_left"]["distance_to_robot"]<1: return  1, 0.3
+            if sensors["sensor_right"]["distance_to_robot"]<1: return  1, -0.3
+            if front["distance_to_robot"]<0.5: return 1, 0.3
+            return hateAll()
+        return 1, 0
     # Architecture de subsomption:
     # 1. aller vers les robots si detecte un robot,  sinon
     # 2. eviter les murs si detecte un mur, sinon
@@ -96,8 +98,6 @@ def step(robotId, sensors):
     
     # Arbre de décision: longer les murs
     def enter():
-        d = 0.3
-
         def alea(a, b, va, vb):
             if np.random.random_sample() < 0.5:
                 if a: return 1, va
@@ -105,13 +105,13 @@ def step(robotId, sensors):
             else: 
                 if b: return 1, vb
                 if a: return 1, va
-
         # Mur en face et sur un des cotes
+        d = 0.3
         if (s_front<d and s_left<d) or (s_front<d and s_right<d):
             l = s_front<d and s_left<d
             r = s_front<d and s_right<d
             return alea(l, r, 1, -1)
-        d = 0.5
+        d = 0.4
         # Mur sur un des cotes ou les deux
         if s_front_left<1 or s_front_right<1:
             if s_front_left - s_front_right < 0.1 : return 1, 1
@@ -151,8 +151,8 @@ def step(robotId, sensors):
 
     def detect_back(s):
         return s["isRobot"] and (not s["isSameTeam"]) and s["distance"]<1
-
-    if detect_back(sensors["sensor_back"]):
+    # Detecte si il y a un enemie qui le poursuit
+    if detect_back(sensors["sensor_back"]): 
         return 0,0
     if left["isSameTeam"] or right["isSameTeam"] or sensors["sensor_left"]["isSameTeam"] or sensors["sensor_right"]["isSameTeam"] or front["isSameTeam"]: translation, rotation = hateFriend()
     else:
